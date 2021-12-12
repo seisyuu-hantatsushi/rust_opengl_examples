@@ -86,11 +86,14 @@ impl Vector3 {
     }
 
     /* Cross Product of Vector3 */
-    #[allow(dead_code)]
     pub fn cross_product(self, other: Self) -> Self {
 	let x = self.1 * other.2 - self.2 * other.1;
 	let y = self.2 * other.0 - self.0 * other.2;
 	let z = self.0 * other.1 - self.1 * other.0;
 	Self(x, y, z)
     }
+}
+
+pub fn cross_product(a:Vector3, b:Vector3) -> Vector3 {
+    Vector3(a.1*b.2-a.2*b.1, a.2*b.0-a.0*b.2, a.0*b.1-a.1*b.0)
 }
