@@ -73,6 +73,20 @@ impl ops::Mul for Vector3 {
     }
 }
 
+impl ops::Mul<Vector3> for f64 {
+    type Output = Vector3;
+    fn mul(self, other: Vector3) -> Vector3 {
+	Vector3(self*other.0, self*other.1, self*other.2)
+    }
+}
+
+impl ops::Div<f64> for Vector3 {
+    type Output = Vector3;
+    fn div(self, other:f64) -> Vector3 {
+	Vector3(self.0/other, self.0/other, self.0/other)
+    }
+}
+
 impl Vector3 {
     #[allow(dead_code)]
     pub fn square(self) -> f64 {

@@ -42,7 +42,7 @@ mod tests {
 	let b = Vector3(2.0, 3.0, 4.0);
 	assert_eq!(a.cross_product(a), Vector3(0.0,0.0,0.0));
 	assert_eq!(a.cross_product(b), Vector3::cross_product(a,b));
-    	assert_eq!(a.cross_product(b), Vector3(-1.0,2.0,-1.0));
+	assert_eq!(a.cross_product(b), Vector3(-1.0,2.0,-1.0));
     }
 
     #[test]
