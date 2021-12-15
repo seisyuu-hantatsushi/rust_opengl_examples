@@ -87,6 +87,18 @@ impl ops::Div<f64> for Vector3 {
     }
 }
 
+/* cross product for Vector3 */
+pub fn cross_product(a:Vector3, b:Vector3) -> Vector3 {
+    Vector3(a.1*b.2-a.2*b.1, a.2*b.0-a.0*b.2, a.0*b.1-a.1*b.0)
+}
+
+impl ops::BitAnd for Vector3 {
+    type Output = Vector3;
+    fn bitand(self, rhs: Self) -> Self::Output {
+	cross_product(self, rhs)
+    }
+}
+
 impl Vector3 {
     #[allow(dead_code)]
     pub fn square(self) -> f64 {
@@ -108,6 +120,3 @@ impl Vector3 {
     }
 }
 
-pub fn cross_product(a:Vector3, b:Vector3) -> Vector3 {
-    Vector3(a.1*b.2-a.2*b.1, a.2*b.0-a.0*b.2, a.0*b.1-a.1*b.0)
-}

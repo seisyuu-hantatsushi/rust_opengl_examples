@@ -1,4 +1,3 @@
-
 pub mod graphic_math;
 
 #[cfg(test)]

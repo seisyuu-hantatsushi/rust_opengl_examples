@@ -106,4 +106,24 @@ impl Matrix4x4 {
 	    ]
 	}
     }
+
+    /* シリアライズ */
+    pub fn serialize(self) -> [f64; 16] {
+	[
+	    self.v[0][0], self.v[0][1], self.v[0][2], self.v[0][3],
+	    self.v[1][0], self.v[1][1], self.v[1][2], self.v[1][3],
+	    self.v[2][0], self.v[2][1], self.v[2][2], self.v[2][3],
+	    self.v[3][0], self.v[3][1], self.v[3][2], self.v[3][3]
+	]
+    }
+
+    pub fn serialize_f32(self) -> [f32; 16] {
+	[
+	    self.v[0][0] as f32, self.v[0][1] as f32, self.v[0][2] as f32, self.v[0][3] as f32,
+	    self.v[1][0] as f32, self.v[1][1] as f32, self.v[1][2] as f32, self.v[1][3] as f32,
+	    self.v[2][0] as f32, self.v[2][1] as f32, self.v[2][2] as f32, self.v[2][3] as f32,
+	    self.v[3][0] as f32, self.v[3][1] as f32, self.v[3][2] as f32, self.v[3][3] as f32
+	]
+    }
+
 }
