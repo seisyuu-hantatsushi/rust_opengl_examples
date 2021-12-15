@@ -1,12 +1,13 @@
-mod draw_cude;
+
+mod draw_frame_square;
 
 use glfw::{Action, Context, Key};
-use draw_cude::*;
+use draw_frame_square::*;
 
 fn main() {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
-    let (mut window, events) = glfw.create_window(800, 600, "Draw Cube", glfw::WindowMode::Windowed)
+    let (mut window, events) = glfw.create_window(800, 600, "Draw Square Frame", glfw::WindowMode::Windowed)
         .expect("Failed to create GLFW window.");
 
     window.make_current();

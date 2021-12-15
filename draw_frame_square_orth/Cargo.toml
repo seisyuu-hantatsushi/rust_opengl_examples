@@ -1,5 +1,5 @@
 [package]
-name = "draw_cube"
+name = "draw_frame_square_orth"
 version = "0.1.0"
 edition = "2018"
 
@@ -10,3 +10,4 @@ glfw = "0.41.0"
 gl = "0.14.0"
 glutils = { path = "../glutils" }
 linear_transform = { path = "../linear_transform" }
+graphic_math     = { path = "../graphic_math" }
