@@ -1,5 +1,5 @@
 [package]
-name = "draw_frame_sqaure_perspective"
+name = "draw_frame_square_frustum"
 version = "0.1.0"
 edition = "2018"
 
