@@ -45,8 +45,15 @@ impl ops::Sub for Matrix4x4 {
     }
 }
 
+impl ops::Index<usize> for Matrix4x4 {
+    type Output = [f64; 4];
+    fn index(&self, index:usize) -> &Self::Output {
+	&self.v[index]
+    }
+}
+
 fn matrix4x4_entry(l:Matrix4x4, r:Matrix4x4, i:usize, j:usize) -> f64 {
-    let v:[f64; 4] = [ l.v[i][0]*r.v[0][j], l.v[i][1]*r.v[1][j], l.v[i][2]*r.v[2][j], l.v[i][3]*r.v[3][j] ];
+    let v:[f64; 4] = [ l[i][0]*r[0][j], l[i][1]*r[1][j], l[i][2]*r[2][j], l[i][3]*r[3][j] ];
     v.iter().fold(0.0, |acc, e| acc+e)
 }
 
@@ -125,5 +132,4 @@ impl Matrix4x4 {
 	    self.v[3][0] as f32, self.v[3][1] as f32, self.v[3][2] as f32, self.v[3][3] as f32
 	]
     }
-
 }
