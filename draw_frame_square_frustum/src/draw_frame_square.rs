@@ -154,7 +154,7 @@ impl GlRender {
 
 	//射影変換行列を計算する.
 	//let mvp = Matrix4x4::identity();
-	let mvp = graphic_math::frustum_project(1.0, -1.0, -1.0, 1.0, 0.1, -2.0);
+	let mvp = graphic_math::frustum_project(-1.0, 1.0, -1.0, 1.0, 0.1, -2.0);
 	unsafe {
 	    gl::ProgramUniformMatrix4fv(self.shader_program, 2, 1, gl::TRUE, mem::transmute(&mvp.serialize_f32()[0]));
 	    gl::ClearColor(0.3, 0.3, 0.3, 1.0);
