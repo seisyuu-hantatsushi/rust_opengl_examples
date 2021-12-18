@@ -1,0 +1,12 @@
+[book]
+authors = ["Kazushige Taniguchi"]
+language = "en"
+multilingual = true
+src = "src"
+title = "OpenGL in Rust"
+
+[build]
+build-dir = "../docs"
+
+[output.html]
+mathjax-support = true
