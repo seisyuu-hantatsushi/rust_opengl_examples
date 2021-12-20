@@ -9,7 +9,7 @@ static VERTEX_SHADER_CODE: &'static str = include_str!("simple_viewport.vert");
 
 static FRAGMENT_SHADER_CODE: &'static str = include_str!("simple.frag");
 
-static CUBE_VERTEX_DATA: [GLfloat; 24] = [
+static CUBE_VERTEX_DATA: [GLfloat; 3*8] = [
     -1.0, -1.0,  -1.0,
      1.0, -1.0,  -1.0,
      1.0, -1.0,   1.0,
@@ -20,7 +20,7 @@ static CUBE_VERTEX_DATA: [GLfloat; 24] = [
     -1.0,  1.0,   1.0
 ];
 
-static CUBE_ELEMENT_INDEX: [GLuint; 24] = [
+static CUBE_ELEMENT_INDEX: [GLuint; 2*12] = [
     0, 1,
     1, 2,
     2, 3,
@@ -35,7 +35,7 @@ static CUBE_ELEMENT_INDEX: [GLuint; 24] = [
     7, 4
 ];
 
-static VERTEX_COLOR_DATA: [GLfloat; 32] = [
+static VERTEX_COLOR_DATA: [GLfloat; 4*8] = [
     1.0, 0.0, 0.0, 1.0,
     1.0, 0.0, 0.0, 1.0,
     1.0, 0.0, 0.0, 1.0,
@@ -124,7 +124,8 @@ where
     let vertex_vbo_index        = 0;
     let element_index_vbo_index = 1;
     let vertex_color_vbo_index  = 2;
-
+    let position_location = 0;
+    let color_location = 1;
     unsafe {
 	gl::DeleteShader(fragment_shader);
 	gl::DeleteShader(vertex_shader);
@@ -153,24 +154,26 @@ where
                        gl::STATIC_DRAW);
 
 	//simple_viewport.vertの変数"position"と頂点バッファを結びつける.
-	{
-	    let location = 0;
-	    gl::EnableVertexAttribArray(location);
-	    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_vbo_index]);
-	    //shader側のメモリに配置したVertex情報のフォーマットを設定する.
-	    //今回は3次元座標なので,size=3
-	    gl::VertexAttribPointer(location, 3, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
-	}
+	gl::EnableVertexAttribArray(position_location);
+	gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_vbo_index]);
+	//shader側のメモリに配置したVertex情報のフォーマットを設定する.
+	//今回は3次元座標なので,size=3
+	gl::VertexAttribPointer(position_location, 3, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
 
 	//simple_viewport.vertの変数"vertexColor"と頂点での色情報バッファを結びつける.
-	{
-	    let location = 1;
-	    gl::EnableVertexAttribArray(location);
-	    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_color_vbo_index]);
-	    //shader側のメモリに配置したVertex情報のフォーマットを設定する.
-	    //今回はRGBAなので,size=4
-	    gl::VertexAttribPointer(location, 4, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
-	}
+	gl::EnableVertexAttribArray(color_location);
+	gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_color_vbo_index]);
+	//shader側のメモリに配置したVertex情報のフォーマットを設定する.
+	//今回はRGBAなので,size=4
+	gl::VertexAttribPointer(color_location, 4, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
+
+	gl::BindVertexArray(0); //先にVAOを解く. でないと,ELEMENT_BUFFERとARRAY_BUFFERがVAOから外される.
+	gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
+	gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+
+	gl::DisableVertexAttribArray(color_location);
+	gl::DisableVertexAttribArray(position_location);
+
     }
 
     GlRender {
@@ -195,12 +198,14 @@ impl GlRender {
 	    let mvp_str = CString::new("mvp").unwrap_or_else(|_| panic!("failed to allocate string space"));
 	    let mvp_str_ptr = mvp_str.as_ptr();
 	    let mvp_location = gl::GetUniformLocation(self.shader_program, mvp_str_ptr);
-	    gl::ProgramUniformMatrix4fv(self.shader_program, mvp_location, 1, gl::TRUE, mem::transmute(&mvp.serialize_f32()[0]));
 	    gl::ClearColor(0.3, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
 	    gl::UseProgram(self.shader_program);
+	    gl::ProgramUniformMatrix4fv(self.shader_program, mvp_location, 1, gl::TRUE, mem::transmute(&mvp.serialize_f32()[0]));
 	    gl::BindVertexArray(self.vertex_array_object);
 	    gl::DrawElements(gl::LINES, 24, gl::UNSIGNED_INT, ptr::null());
+	    gl::BindVertexArray(0);
+	    gl::Flush();
 	}
     }
 }
