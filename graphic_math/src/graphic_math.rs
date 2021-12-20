@@ -72,20 +72,20 @@ pub fn perspective(fovy:f64, aspect:f64, near:f64, far:f64) -> Matrix4x4 {
     透視投影変換行列
     fovy_rad = fovy*PI/180.0;
     f = 1/tan(fovy_rad/2)
-    |         fovy/aspect,                    0,                            0,                         0 |
-    |                   0,                 fovy,                            0,                         0 |
-    |                   0,                    0,     -(far+near)/(far-near),    -2*far*near/(far - near) |
-    |                   0,                    0,                           -1,                         0 |
+    |         f/aspect,                       0,                          0,                         0 |
+    |                   0,                    f,                          0,                         0 |
+    |                   0,                    0,     -(far+near)/(far-near),  -2*far*near/(far - near) |
+    |                   0,                    0,                         -1,                         0 |
      */
     let theta = fovy*0.5*PI/180.0;
     let f = theta.tan();
     Matrix4x4 {
 	v:
 	[
-	    [  f/aspect,         0.0,                         0.0,                       0.0 ],
-	    [        0.0,          f,                         0.0,                       0.0 ],
-	    [        0.0,        0.0,      -(far+near)/(far-near),  -2.0*far*near/(far-near) ],
-	    [        0.0,        0.0,                        -1.0,                       0.0 ]
+	    [ 1.0/(aspect*f),         0.0,                         0.0,                       0.0 ],
+	    [            0.0,       1.0/f,                         0.0,                       0.0 ],
+	    [            0.0,         0.0,      -(far+near)/(far-near),  -2.0*far*near/(far-near) ],
+	    [            0.0,         0.0,                        -1.0,                       0.0 ]
 	]
     }
 }
