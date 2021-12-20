@@ -159,7 +159,10 @@ impl GlRender {
 	let pers = graphic_math::perspective(45.0, 1.0, 0.1, 2.0);
 	let mvp = pers*lookat;
 	unsafe {
-	    gl::ProgramUniformMatrix4fv(self.shader_program, 2, 1, gl::TRUE, mem::transmute(&mvp.serialize_f32()[0]));
+	    let mvp_str = CString::new("mvp").unwrap_or_else(|_| panic!("failed to allocate string space"));
+	    let mvp_str_ptr = mvp_str.as_ptr();
+	    let mvp_location = gl::GetUniformLocation(self.shader_program, mvp_str_ptr);
+	    gl::ProgramUniformMatrix4fv(self.shader_program, mvp_location, 1, gl::TRUE, mem::transmute(&mvp.serialize_f32()[0]));
 	    gl::ClearColor(0.3, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
 	    gl::UseProgram(self.shader_program);
