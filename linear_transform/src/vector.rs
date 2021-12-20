@@ -4,14 +4,6 @@ use std::{f64,ops,fmt};
 #[derive(Debug,Copy,Clone,PartialEq)]
 pub struct Vector2 (pub f64, pub f64);
 
-
-#[allow(dead_code)]
-impl fmt::Display for Vector3 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-	write!(f,"Vector3:[{},{},{}]", self.0, self.1, self.2)
-    }
-}
-
 impl ops::Add for Vector2 {
     type Output = Self;
 
@@ -57,6 +49,13 @@ impl Vector2 {
 
 #[derive(Debug,Copy,Clone,PartialEq)]
 pub struct Vector3 (pub f64, pub f64, pub f64);
+
+#[allow(dead_code)]
+impl fmt::Display for Vector3 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	write!(f,"Vector3:[{},{},{}]", self.0, self.1, self.2)
+    }
+}
 
 impl ops::Index<usize> for Vector3 {
     type Output = f64;
