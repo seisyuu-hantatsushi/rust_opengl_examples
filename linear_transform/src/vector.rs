@@ -58,6 +58,18 @@ impl Vector2 {
 #[derive(Debug,Copy,Clone,PartialEq)]
 pub struct Vector3 (pub f64, pub f64, pub f64);
 
+impl ops::Index<usize> for Vector3 {
+    type Output = f64;
+    fn index(&self, index:usize) -> &Self::Output {
+	match index {
+	    0 => &self.0,
+	    1 => &self.1,
+	    2 => &self.2,
+	    _ => panic!("out of index")
+	}
+    }
+}
+
 impl ops::Add for Vector3 {
     type Output = Self;
 
