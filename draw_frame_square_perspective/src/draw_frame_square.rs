@@ -10,10 +10,10 @@ static VERTEX_SHADER_CODE: &'static str = include_str!("simple_viewport.vert");
 static FRAGMENT_SHADER_CODE: &'static str = include_str!("simple.frag");
 
 static VERTEX_DATA: [GLfloat; 12] = [
-     0.9,   0.9,  -0.0,
-    -0.9,   0.9,  -0.0,
-    -0.9,  -0.9,  -0.0,
-     0.9,  -0.9,  -0.0,
+     0.8,   0.8,  -0.0,
+    -0.8,   0.8,  -0.0,
+    -0.8,  -0.8,  -0.0,
+     0.8,  -0.8,  -0.0,
 ];
 
 static VERTEX_COLOR_DATA: [GLfloat; 16] = [
@@ -152,11 +152,11 @@ where
 impl GlRender {
     pub fn render(&self) {
 	//射影変換行列を計算する.
-	let eye    = Vector3(0.2,0.2,1.5);
+	let eye    = Vector3(1.0,2.0,3.0);
 	let center = Vector3(0.0,0.0,0.0);
 	let up     = Vector3(0.0,1.0,0.0);
 	let lookat = graphic_math::look_at(eye,center,up);
-	let pers = graphic_math::perspective(45.0, 1.0, 0.1, 2.0);
+	let pers = graphic_math::perspective(30.0, 1.0, 3.0, 6.0);
 	let mvp = pers*lookat;
 	unsafe {
 	    let mvp_str = CString::new("mvp").unwrap_or_else(|_| panic!("failed to allocate string space"));
