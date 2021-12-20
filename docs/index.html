@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> コンピュータで絵を書くために必要なもの</a></li><li class="chapter-item expanded "><a href="chapter_1.html"><strong aria-hidden="true">2.</strong> 座標のための数学</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction/introduction.html"><strong aria-hidden="true">1.</strong> コンピュータで絵を書くために必要なもの</a></li><li class="chapter-item expanded "><a href="chapter_1/chapter_1.html"><strong aria-hidden="true">2.</strong> 座標のための数学</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -145,13 +145,27 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<h2 id="コンピュータで絵を書くということ"><a class="header" href="#コンピュータで絵を書くということ">コンピュータで絵を書くということ</a></h2>
+<p>現在のコンピュータにはディスプレイが接続されています.
+ディスプレイは三原色(赤,青,緑)の点で絵を表示しているので,
+コンピュータがディスプレイに絵を表示するということは,
+コンピュータがメモリ上のデータを三原色(赤,青,緑)と
+ディスプレイのどの位置に三原色(赤,青,緑)を置くかということを
+解釈して送っているということになります.</p>
+<p>では,3次元空間の物体を2次元平面で描くためにはどうすればいいでしょうか.
+それは,以下のような図を考えることになります.
+視点と3次元の物体の間に,ディスプレイあるとして,
+3次元物体と視点結ぶ線とディスプレイ平面の交点で色をつけることにより,
+絵を書くことになります.</p>
+<p>さて,この交点の位置を求めるためになにが必要でしょうか?
+必要なのは,簡単な線形代数と幾何の知識となります.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
 
-                            <a rel="next" href="chapter_1.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="chapter_1/chapter_1.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -162,7 +176,7 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
 
-                    <a rel="next" href="chapter_1.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="chapter_1/chapter_1.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
