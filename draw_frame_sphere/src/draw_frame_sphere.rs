@@ -66,19 +66,25 @@ pub struct GlRender {
     vertex_array_object: Vec<GLuint>
 }
 
-fn circle_vertexs(radius:f64, slice:u32) -> (Vec<[f64;2]>,Vec<[u32;2]>) {
-    let mut ps:Vec<[f64;2]> = Vec::new();
+fn sphere_vertices(radius:f64, slice:u32, stack:u32) -> (Vec<[f64;3]>,Vec<[u32;2]>) {
+    let mut ps:Vec<[f64;3]> = Vec::new();
     let mut is:Vec<[u32;2]> = Vec::new();
-    for i in 0 .. slice {
-	let phi:f64 = 2.0*PI*(i as f64)/(slice as f64);
-	ps.push([radius*phi.cos(),radius*phi.sin()]);
-    }
-    for i in 0 .. slice {
-	is.push([i%slice, (i+1)%slice]);
+    for j in 0 .. (stack+1) {
+	if (j == 0 || j == stack){
+	}
+	else {
+	    let theta = PI*(j as f64)/(stack as f64);
+	    for i in 0..slice {
+		let phi:f64 = 2.0*PI*(i as f64)/(slice as f64);
+		ps.push([radius*theta.sin()*phi.cos(), radius*theta.sin()*phi.sin(), radius*theta.cos()]);
+	    }
+	    for i in 0 .. slice {
+		is.push([slice*(j-1)+i%slice, slice*(j-1)+(i+1)%slice]);
+	    }
+	}
     }
     (ps,is)
 }
-
 
 static COORDINATE_AXES_VERTEX_DATA: [[GLfloat;3];6] = [
     [  2.0,  0.0,  0.0 ],
@@ -111,7 +117,7 @@ unsafe fn create_coordinate_axes_array(vao:GLuint) -> () {
     let element_index_vbo_index = 1;
     let vertex_color_vbo_index  = 2;
     let mut vbos : [GLuint;3] = [0,0,0];
-    
+
     gl::BindVertexArray(vao);
     gl::GenBuffers(3, &mut vbos[0]);
 
@@ -163,11 +169,11 @@ unsafe fn create_coordinate_axes_array(vao:GLuint) -> () {
     {
 	let mapped_buffer: *mut GLuint = gl::MapBuffer(gl::ELEMENT_ARRAY_BUFFER, gl::WRITE_ONLY) as *mut GLuint;
 	for i in 0 .. COORDINATE_AXES_INDEX_DATA.len() {
-		let s: *mut GLuint = mapped_buffer.offset((2*i+0) as isize);
+	    let s: *mut GLuint = mapped_buffer.offset((2*i+0) as isize);
 	    let d: *mut GLuint = mapped_buffer.offset((2*i+1) as isize);
 	    *s = COORDINATE_AXES_INDEX_DATA[i][0];
 	    *d = COORDINATE_AXES_INDEX_DATA[i][1];
-	    }
+	}
 	gl::UnmapBuffer(gl::ELEMENT_ARRAY_BUFFER);
     }
 
@@ -202,26 +208,26 @@ unsafe fn create_sphere_array_object(vao:GLuint) -> () {
     let position_location = 0;
     let color_location = 1;
 
-    let (circle_vertex, circle_indecies) = circle_vertexs(0.5, 24);
+    let (circle_vertices, circle_indices) = sphere_vertices(0.5, 24, 8);
 
     gl::BindVertexArray(vao);
     gl::GenBuffers(3, &mut vbos[0]);
 
     gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_vbo_index]);
     gl::BufferData(gl::ARRAY_BUFFER,
-                   (circle_vertex.len() * 3 * mem::size_of::<GLfloat>()) as GLsizeiptr,
+                   (circle_vertices.len() * 3 * mem::size_of::<GLfloat>()) as GLsizeiptr,
 		   ptr::null(),
                    gl::STATIC_DRAW);
     {
 	let mapped_buffer: *mut GLfloat = gl::MapBuffer(gl::ARRAY_BUFFER, gl::WRITE_ONLY) as *mut GLfloat;
 	let mut i:isize = 0;
-	for p in circle_vertex.iter() {
+	for p in circle_vertices.iter() {
 	    let x: *mut GLfloat = mapped_buffer.offset(i+0);
 	    let y: *mut GLfloat = mapped_buffer.offset(i+1);
 	    let z: *mut GLfloat = mapped_buffer.offset(i+2);
 	    *x = p[0] as GLfloat;
 	    *y = p[1] as GLfloat;
-	    *z = 0.0;
+	    *z = p[2] as GLfloat;
 	    i+=3;
 	}
 	gl::UnmapBuffer(gl::ARRAY_BUFFER);
@@ -229,12 +235,12 @@ unsafe fn create_sphere_array_object(vao:GLuint) -> () {
 
     gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_color_vbo_index]);
     gl::BufferData(gl::ARRAY_BUFFER,
-                   (circle_vertex.len() * 4 * mem::size_of::<GLfloat>()) as GLsizeiptr,
+                   (circle_vertices.len() * 4 * mem::size_of::<GLfloat>()) as GLsizeiptr,
                    ptr::null(),
                    gl::STATIC_DRAW);
     {
 	let mapped_buffer: *mut GLfloat = gl::MapBuffer(gl::ARRAY_BUFFER, gl::WRITE_ONLY) as *mut GLfloat;
-	for i in 0 .. circle_vertex.len() {
+	for i in 0 .. circle_vertices.len() {
 	    let r: *mut GLfloat = mapped_buffer.offset((4*i+0) as isize);
 	    let g: *mut GLfloat = mapped_buffer.offset((4*i+1) as isize);
 	    let b: *mut GLfloat = mapped_buffer.offset((4*i+2) as isize);
@@ -249,16 +255,16 @@ unsafe fn create_sphere_array_object(vao:GLuint) -> () {
 
     gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, vbos[element_index_vbo_index]);
     gl::BufferData(gl::ELEMENT_ARRAY_BUFFER,
-                   (circle_indecies.len() * 2 * mem::size_of::<GLuint>()) as GLsizeiptr,
+                   (circle_indices.len() * 2 * mem::size_of::<GLuint>()) as GLsizeiptr,
                        ptr::null(),
                    gl::STATIC_DRAW);
     {
 	let mapped_buffer: *mut GLuint = gl::MapBuffer(gl::ELEMENT_ARRAY_BUFFER, gl::WRITE_ONLY) as *mut GLuint;
-	for i in 0 .. circle_indecies.len() {
+	for i in 0 .. circle_indices.len() {
 	    let s: *mut GLuint = mapped_buffer.offset((2*i+0) as isize);
 	    let d: *mut GLuint = mapped_buffer.offset((2*i+1) as isize);
-	    *s = circle_indecies[i][0];
-	    *d = circle_indecies[i][1];
+	    *s = circle_indices[i][0];
+	    *d = circle_indices[i][1];
 	}
 	gl::UnmapBuffer(gl::ELEMENT_ARRAY_BUFFER);
     }
@@ -354,7 +360,7 @@ impl GlRender {
 	    gl::BindVertexArray(0);
 
 	    gl::BindVertexArray(self.vertex_array_object[1]);
-	    gl::DrawElements(gl::LINES, 48, gl::UNSIGNED_INT, ptr::null());
+	    gl::DrawElements(gl::LINES, 48*7, gl::UNSIGNED_INT, ptr::null());
 	    gl::BindVertexArray(0);
 
 	    gl::Flush();

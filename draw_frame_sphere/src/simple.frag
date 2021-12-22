@@ -1,4 +1,6 @@
-#version 330
+#version 300 es
+
+precision highp float;
 
 smooth in vec4 fragmentColor;
 out vec4 outputColor;
