@@ -61,16 +61,22 @@ fn link_program(vertex_shader: GLuint, fragment_shader: GLuint) -> GLuint {
     program
 }
 
+struct VertexArrayObjectContext {
+    vao: GLuint,
+    draw_mode: GLenum,
+    count_of_draw_index: GLsizei
+}
+
 pub struct GlRender {
     shader_program: GLuint,
-    vertex_array_object: Vec<GLuint>
+    vertex_array_object_contexts: Vec<VertexArrayObjectContext>
 }
 
 fn sphere_vertices(radius:f64, slice:u32, stack:u32) -> (Vec<[f64;3]>,Vec<[u32;2]>) {
     let mut ps:Vec<[f64;3]> = Vec::new();
     let mut is:Vec<[u32;2]> = Vec::new();
     for j in 0 .. (stack+1) {
-	if (j == 0 || j == stack){
+	if j == 0 || j == stack {
 	}
 	else {
 	    let theta = PI*(j as f64)/(stack as f64);
@@ -110,7 +116,7 @@ static COORDINATE_AXES_COLOR_DATA: [[GLfloat;4];6] = [
     [ 0.0, 0.0, 0.0, 0.0 ],
 ];
 
-unsafe fn create_coordinate_axes_array(vao:GLuint) -> () {
+unsafe fn create_coordinate_axes_array(vao:GLuint) -> VertexArrayObjectContext {
     let position_location = 0;
     let color_location = 1;
     let vertex_vbo_index        = 0;
@@ -196,11 +202,15 @@ unsafe fn create_coordinate_axes_array(vao:GLuint) -> () {
     gl::DisableVertexAttribArray(color_location);
     gl::DisableVertexAttribArray(position_location);
 
-    return;
+    VertexArrayObjectContext {
+	vao: vao,
+	draw_mode: gl::LINES,
+	count_of_draw_index: (COORDINATE_AXES_INDEX_DATA.len() * 2) as GLsizei
+    }
 
 }
 
-unsafe fn create_sphere_array_object(vao:GLuint) -> () {
+unsafe fn create_sphere_array_object(vao:GLuint) ->  VertexArrayObjectContext {
     let mut vbos : [GLuint;3] = [0,0,0];
     let vertex_vbo_index        = 0;
     let element_index_vbo_index = 1;
@@ -290,7 +300,11 @@ unsafe fn create_sphere_array_object(vao:GLuint) -> () {
     gl::DisableVertexAttribArray(color_location);
     gl::DisableVertexAttribArray(position_location);
 
-    return;
+    VertexArrayObjectContext {
+	vao: vao,
+	draw_mode: gl::LINES,
+	count_of_draw_index: (circle_indices.len() * 2) as GLsizei
+    }
 }
 
 pub fn create_glrender<F>(loadfn:F) -> GlRender
@@ -311,6 +325,7 @@ where
     let fragment_shader = compile_shader(FRAGMENT_SHADER_CODE, gl::FRAGMENT_SHADER);
     let shader_program = link_program(vertex_shader, fragment_shader);
     let mut vao: [GLuint;2] = [0,0];
+    let mut ctxs : Vec<VertexArrayObjectContext> = Vec::new();
 
     unsafe {
 	gl::DeleteShader(fragment_shader);
@@ -318,17 +333,17 @@ where
 
 	gl::GenVertexArrays(2, &mut vao[0]);
 
-	//座標軸をかく
-	create_coordinate_axes_array(vao[0]);
+	// 座標軸をかく
+	ctxs.push(create_coordinate_axes_array(vao[0]));
 
 	// 球を書いてみる
-	create_sphere_array_object(vao[1]);
+	ctxs.push(create_sphere_array_object(vao[1]));
 
     }
 
     GlRender {
 	shader_program: shader_program,
-	vertex_array_object: vec![vao[0],vao[1]]
+	vertex_array_object_contexts: ctxs
     }
 }
 
@@ -355,12 +370,16 @@ impl GlRender {
 	    gl::UseProgram(self.shader_program);
 	    gl::ProgramUniformMatrix4fv(self.shader_program, mvp_location, 1, gl::TRUE, mem::transmute(&mvp.serialize_f32()[0]));
 
-	    gl::BindVertexArray(self.vertex_array_object[0]);
-	    gl::DrawElements(gl::LINES, 8, gl::UNSIGNED_INT, ptr::null());
+	    gl::BindVertexArray(self.vertex_array_object_contexts[0].vao);
+	    gl::DrawElements(self.vertex_array_object_contexts[0].draw_mode,
+			     self.vertex_array_object_contexts[0].count_of_draw_index,
+			     gl::UNSIGNED_INT, ptr::null());
 	    gl::BindVertexArray(0);
 
-	    gl::BindVertexArray(self.vertex_array_object[1]);
-	    gl::DrawElements(gl::LINES, 48*7, gl::UNSIGNED_INT, ptr::null());
+	    gl::BindVertexArray(self.vertex_array_object_contexts[1].vao);
+	    gl::DrawElements(self.vertex_array_object_contexts[1].draw_mode,
+			     self.vertex_array_object_contexts[1].count_of_draw_index,
+			     gl::UNSIGNED_INT, ptr::null());
 	    gl::BindVertexArray(0);
 
 	    gl::Flush();
