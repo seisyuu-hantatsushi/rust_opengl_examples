@@ -72,23 +72,46 @@ pub struct GlRender {
     vertex_array_object_contexts: Vec<VertexArrayObjectContext>
 }
 
-fn sphere_vertices(radius:f64, slice:u32, stack:u32) -> (Vec<[f64;3]>,Vec<[u32;2]>) {
+fn frame_sphere_vertices(radius:f64, slice:u32, stack:u32) -> (Vec<[f64;3]>,Vec<[u32;2]>) {
     let mut ps:Vec<[f64;3]> = Vec::new();
     let mut is:Vec<[u32;2]> = Vec::new();
-    for j in 0 .. (stack+1) {
-	if j == 0 || j == stack {
+    for j in 0 ..  stack+1 {
+	if j == 0 {
+	    ps.push([0.0, 0.0, radius]);
+	}
+	else if j == stack {
+	    ps.push([0.0, 0.0, -radius]);
 	}
 	else {
-	    let theta = PI*(j as f64)/(stack as f64);
+	    let theta = PI*(j as f64)/((stack) as f64);
 	    for i in 0..slice {
 		let phi:f64 = 2.0*PI*(i as f64)/(slice as f64);
 		ps.push([radius*theta.sin()*phi.cos(), radius*theta.sin()*phi.sin(), radius*theta.cos()]);
 	    }
 	    for i in 0 .. slice {
-		is.push([slice*(j-1)+i%slice, slice*(j-1)+(i+1)%slice]);
+		is.push([1+slice*(j-1)+i%slice, 1+slice*(j-1)+(i+1)%slice]);
 	    }
 	}
     }
+
+    for j in 0 .. stack {
+	if j == 0 {
+	    for i in 0 .. slice {
+		is.push([0, 1+i%slice]);
+	    }
+	}
+	else if j == stack-1 {
+	    for i in 0 .. slice {
+		is.push([ 1 + slice*(stack-2)+i , 1 + slice*(stack-1)]);
+	    }
+	}
+	else {
+	    for i in 0 .. slice {
+		is.push([ 1 + slice*(j-1) + i , 1 + slice*j + i]);
+	    }
+	}
+    }
+
     (ps,is)
 }
 
@@ -218,7 +241,7 @@ unsafe fn create_sphere_array_object(vao:GLuint) ->  VertexArrayObjectContext {
     let position_location = 0;
     let color_location = 1;
 
-    let (circle_vertices, circle_indices) = sphere_vertices(0.5, 24, 8);
+    let (circle_vertices, circle_indices) = frame_sphere_vertices(0.5, 24, 16);
 
     gl::BindVertexArray(vao);
     gl::GenBuffers(3, &mut vbos[0]);
@@ -303,7 +326,7 @@ unsafe fn create_sphere_array_object(vao:GLuint) ->  VertexArrayObjectContext {
     VertexArrayObjectContext {
 	vao: vao,
 	draw_mode: gl::LINES,
-	count_of_draw_index: (circle_indices.len() * 2) as GLsizei
+	count_of_draw_index: (circle_indices.len() * 3) as GLsizei
     }
 }
 
