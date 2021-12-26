@@ -8,6 +8,8 @@ use graphic_math::graphic_math;
 
 static VERTEX_SHADER_CODE: &'static str = include_str!("simple_viewport.vert");
 
+static LIGHTING_VERTEX_SHADER_CODE: &'static str = include_str!("lighting.vert");
+
 static FRAGMENT_SHADER_CODE: &'static str = include_str!("simple.frag");
 
 fn compile_shader(shader_code: &str, shader_type: GLenum) -> GLuint {
@@ -68,55 +70,13 @@ struct VertexArrayObjectContext {
 }
 
 pub struct GlRender {
-    shader_program: GLuint,
+    shader_programs: Vec<GLuint>,
     vertex_array_object_contexts: Vec<VertexArrayObjectContext>
 }
 
-fn frame_sphere_vertices(radius:f64, slice:u32, stack:u32) -> (Vec<[f64;3]>,Vec<[u32;2]>) {
+fn sphere_vertices(radius:f64, slice:u32, stack:u32) -> (Vec<[f64;3]>,Vec<[f64;3]>,Vec<[u32;3]>) {
     let mut ps:Vec<[f64;3]> = Vec::new();
-    let mut is:Vec<[u32;2]> = Vec::new();
-    for j in 0 ..  stack+1 {
-	if j == 0 {
-	    ps.push([0.0, 0.0, radius]);
-	}
-	else if j == stack {
-	    ps.push([0.0, 0.0, -radius]);
-	}
-	else {
-	    let theta = PI*(j as f64)/((stack) as f64);
-	    for i in 0..slice {
-		let phi:f64 = 2.0*PI*(i as f64)/(slice as f64);
-		ps.push([radius*theta.sin()*phi.cos(), radius*theta.sin()*phi.sin(), radius*theta.cos()]);
-	    }
-	    for i in 0 .. slice {
-		is.push([1+slice*(j-1)+i%slice, 1+slice*(j-1)+(i+1)%slice]);
-	    }
-	}
-    }
-
-    for j in 0 .. stack {
-	if j == 0 {
-	    for i in 0 .. slice {
-		is.push([0, 1+i%slice]);
-	    }
-	}
-	else if j == stack-1 {
-	    for i in 0 .. slice {
-		is.push([ 1 + slice*(stack-2)+i , 1 + slice*(stack-1)]);
-	    }
-	}
-	else {
-	    for i in 0 .. slice {
-		is.push([ 1 + slice*(j-1) + i , 1 + slice*j + i]);
-	    }
-	}
-    }
-
-    (ps,is)
-}
-
-fn sphere_vertices(radius:f64, slice:u32, stack:u32) -> (Vec<[f64;3]>,Vec<[u32;3]>) {
-    let mut ps:Vec<[f64;3]> = Vec::new();
+    let mut ns:Vec<[f64;3]> = Vec::new();
     let mut is:Vec<[u32;3]> = Vec::new();
 
     for j in 0 ..  stack+1 {
@@ -124,6 +84,7 @@ fn sphere_vertices(radius:f64, slice:u32, stack:u32) -> (Vec<[f64;3]>,Vec<[u32;3
 	for i in 0..slice+1 {
 	    let phi:f64 = 2.0*PI*(i as f64)/(slice as f64);
 	    ps.push([radius*theta.sin()*phi.cos(), radius*theta.sin()*phi.sin(), radius*theta.cos()]);
+	    ns.push([radius*theta.sin()*phi.cos(), radius*theta.sin()*phi.sin(), radius*theta.cos()]);
 	}
     }
 
@@ -135,7 +96,8 @@ fn sphere_vertices(radius:f64, slice:u32, stack:u32) -> (Vec<[f64;3]>,Vec<[u32;3
 	    is.push([k1+1+i, k2+i, k2+1+i]);
 	}
     }
-    (ps,is)
+
+    (ps,ns,is)
 }
 
 static COORDINATE_AXES_VERTEX_DATA: [[GLfloat;3];6] = [
@@ -163,17 +125,24 @@ static COORDINATE_AXES_COLOR_DATA: [[GLfloat;4];6] = [
 ];
 
 unsafe fn create_coordinate_axes_array(vao:GLuint) -> VertexArrayObjectContext {
-    let position_location = 0;
-    let color_location = 1;
-    let vertex_vbo_index        = 0;
-    let element_index_vbo_index = 1;
-    let vertex_color_vbo_index  = 2;
+
+    enum LocationInShader {
+	Position = 0,
+	Color    = 1
+    }
+
+    enum VBOIndex {
+	Vertex = 0,
+	ElementIndex = 1,
+	Color = 2
+    }
+
     let mut vbos : [GLuint;3] = [0,0,0];
 
     gl::BindVertexArray(vao);
     gl::GenBuffers(3, &mut vbos[0]);
 
-    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_vbo_index]);
+    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[VBOIndex::Vertex as usize]);
     gl::BufferData(gl::ARRAY_BUFFER,
                    (COORDINATE_AXES_VERTEX_DATA.len() * 3 * mem::size_of::<GLfloat>()) as GLsizeiptr,
 		   ptr::null(),
@@ -193,7 +162,7 @@ unsafe fn create_coordinate_axes_array(vao:GLuint) -> VertexArrayObjectContext {
 	gl::UnmapBuffer(gl::ARRAY_BUFFER);
     }
 
-    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_color_vbo_index]);
+    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[VBOIndex::Color as usize]);
     gl::BufferData(gl::ARRAY_BUFFER,
                    (COORDINATE_AXES_COLOR_DATA.len() * 4 * mem::size_of::<GLfloat>()) as GLsizeiptr,
                    ptr::null(),
@@ -213,7 +182,7 @@ unsafe fn create_coordinate_axes_array(vao:GLuint) -> VertexArrayObjectContext {
 	gl::UnmapBuffer(gl::ARRAY_BUFFER);
     }
 
-    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, vbos[element_index_vbo_index]);
+    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, vbos[VBOIndex::ElementIndex as usize]);
     gl::BufferData(gl::ELEMENT_ARRAY_BUFFER,
                    (COORDINATE_AXES_INDEX_DATA.len() * 2 * mem::size_of::<GLuint>()) as GLsizeiptr,
                    ptr::null(),
@@ -230,23 +199,23 @@ unsafe fn create_coordinate_axes_array(vao:GLuint) -> VertexArrayObjectContext {
     }
 
     //simple_viewport.vertの変数"position"と頂点バッファを結びつける
-    gl::EnableVertexAttribArray(position_location);
-    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_vbo_index]);
+    gl::EnableVertexAttribArray(LocationInShader::Position as GLuint);
+    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[VBOIndex::Vertex as usize]);
     //shader側のメモリに配置したVertex情報のフォーマットを設定する.
     //今回は3次元座標なので,size=3
-    gl::VertexAttribPointer(position_location, 3, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
+    gl::VertexAttribPointer(LocationInShader::Position as GLuint, 3, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
 
     //simple_viewport.vertの変数"vertexColor"と頂点での色情報バッファを結びつける.
-    gl::EnableVertexAttribArray(color_location);
-    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_color_vbo_index]);
+    gl::EnableVertexAttribArray(LocationInShader::Color as GLuint);
+    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[VBOIndex::Color as usize]);
     //shader側のメモリに配置したVertex情報のフォーマットを設定する.
     //今回はRGBAなので,size=4
-    gl::VertexAttribPointer(color_location, 4, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
+    gl::VertexAttribPointer(LocationInShader::Color as GLuint, 4, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
 
     gl::BindVertexArray(0);
 
-    gl::DisableVertexAttribArray(color_location);
-    gl::DisableVertexAttribArray(position_location);
+    gl::DisableVertexAttribArray(LocationInShader::Color as GLuint);
+    gl::DisableVertexAttribArray(LocationInShader::Position as GLuint);
 
     VertexArrayObjectContext {
 	vao: vao,
@@ -258,18 +227,25 @@ unsafe fn create_coordinate_axes_array(vao:GLuint) -> VertexArrayObjectContext {
 
 unsafe fn create_sphere_array_object(vao:GLuint) ->  VertexArrayObjectContext {
     let mut vbos : [GLuint;3] = [0,0,0];
-    let vertex_vbo_index        = 0;
-    let element_index_vbo_index = 1;
-    let vertex_color_vbo_index  = 2;
-    let position_location = 0;
-    let color_location = 1;
 
-    let (circle_vertices, circle_indices) = sphere_vertices(0.5, 24, 24);
+    enum LocationInShader {
+	Position = 0,
+	Normal   = 1,
+	Color    = 2
+    }
+
+    enum VBOIndex {
+	Vertex = 0,
+	ElementIndex = 1,
+	Color = 2
+    }
+
+    let (circle_vertices, circle_normals, circle_indices) = sphere_vertices(0.5, 24, 24);
 
     gl::BindVertexArray(vao);
     gl::GenBuffers(3, &mut vbos[0]);
 
-    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_vbo_index]);
+    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[VBOIndex::Vertex as usize]);
     gl::BufferData(gl::ARRAY_BUFFER,
                    (circle_vertices.len() * 3 * mem::size_of::<GLfloat>()) as GLsizeiptr,
 		   ptr::null(),
@@ -289,7 +265,7 @@ unsafe fn create_sphere_array_object(vao:GLuint) ->  VertexArrayObjectContext {
 	gl::UnmapBuffer(gl::ARRAY_BUFFER);
     }
 
-    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_color_vbo_index]);
+    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[VBOIndex::Color as usize]);
     gl::BufferData(gl::ARRAY_BUFFER,
                    (circle_vertices.len() * 4 * mem::size_of::<GLfloat>()) as GLsizeiptr,
                    ptr::null(),
@@ -309,7 +285,7 @@ unsafe fn create_sphere_array_object(vao:GLuint) ->  VertexArrayObjectContext {
 	gl::UnmapBuffer(gl::ARRAY_BUFFER);
     }
 
-    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, vbos[element_index_vbo_index]);
+    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, vbos[VBOIndex::ElementIndex as usize]);
     gl::BufferData(gl::ELEMENT_ARRAY_BUFFER,
                    (circle_indices.len() * 3 * mem::size_of::<GLuint>()) as GLsizeiptr,
                    ptr::null(),
@@ -328,25 +304,25 @@ unsafe fn create_sphere_array_object(vao:GLuint) ->  VertexArrayObjectContext {
     }
 
     //simple_viewport.vertの変数"position"と頂点バッファを結びつける.
-    gl::EnableVertexAttribArray(position_location);
-    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_vbo_index]);
+    gl::EnableVertexAttribArray(LocationInShader::Position as GLuint);
+    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[VBOIndex::Vertex as usize]);
     //shader側のメモリに配置したVertex情報のフォーマットを設定する.
     //今回は3次元座標なので,size=3
-    gl::VertexAttribPointer(position_location, 3, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
+    gl::VertexAttribPointer(LocationInShader::Position as GLuint, 3, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
 
     //simple_viewport.vertの変数"vertexColor"と頂点での色情報バッファを結びつける.
-    gl::EnableVertexAttribArray(color_location);
-    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[vertex_color_vbo_index]);
+    gl::EnableVertexAttribArray(LocationInShader::Color as GLuint);
+    gl::BindBuffer(gl::ARRAY_BUFFER, vbos[VBOIndex::Color as usize]);
     //shader側のメモリに配置したVertex情報のフォーマットを設定する.
     //今回はRGBAなので,size=4
-    gl::VertexAttribPointer(color_location, 4, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
+    gl::VertexAttribPointer(LocationInShader::Color as GLuint, 4, gl::FLOAT, gl::FALSE as GLboolean, 0, ptr::null());
 
     gl::BindVertexArray(0); //先にVAOを解く. でないと,ELEMENT_BUFFERとARRAY_BUFFERがVAOから外される.
     gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
     gl::BindBuffer(gl::ARRAY_BUFFER, 0);
 
-    gl::DisableVertexAttribArray(color_location);
-    gl::DisableVertexAttribArray(position_location);
+    gl::DisableVertexAttribArray(LocationInShader::Color as GLuint);
+    gl::DisableVertexAttribArray(LocationInShader::Position as GLuint);
 
     VertexArrayObjectContext {
 	vao: vao,
@@ -360,6 +336,9 @@ where
     F:FnMut(&str) -> *const std::os::raw::c_void,
 {
 
+    let mut shader_programs:Vec<GLuint> = Vec::new();
+    let mut ctxs : Vec<VertexArrayObjectContext> = Vec::new();
+
     gl::load_with(loadfn);
 
     unsafe {
@@ -367,30 +346,46 @@ where
 		 CStr::from_ptr(gl::GetString(gl::VERSION) as *const i8).to_string_lossy().into_owned());
 	println!("Shading lang version:{}",
 		 CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const i8).to_string_lossy().into_owned());
+	{
+	    let vertex_shader = compile_shader(VERTEX_SHADER_CODE, gl::VERTEX_SHADER);
+	    let fragment_shader = compile_shader(FRAGMENT_SHADER_CODE, gl::FRAGMENT_SHADER);
+	    let shader_program = link_program(vertex_shader, fragment_shader);
+	    shader_programs.push(shader_program);
+	    gl::DeleteShader(fragment_shader);
+	    gl::DeleteShader(vertex_shader);
+	}
+	{
+	    let vertex_shader = compile_shader(LIGHTING_VERTEX_SHADER_CODE, gl::VERTEX_SHADER);
+	    let fragment_shader = compile_shader(FRAGMENT_SHADER_CODE, gl::FRAGMENT_SHADER);
+	    let shader_program = link_program(vertex_shader, fragment_shader);
+	    shader_programs.push(shader_program);
+	    gl::DeleteShader(fragment_shader);
+	    gl::DeleteShader(vertex_shader);
+	}
     }
 
-    let vertex_shader = compile_shader(VERTEX_SHADER_CODE, gl::VERTEX_SHADER);
-    let fragment_shader = compile_shader(FRAGMENT_SHADER_CODE, gl::FRAGMENT_SHADER);
-    let shader_program = link_program(vertex_shader, fragment_shader);
-    let mut vao: [GLuint;2] = [0,0];
-    let mut ctxs : Vec<VertexArrayObjectContext> = Vec::new();
+    {
+	let mut vao: [GLuint;2] = [0,0];
 
-    unsafe {
-	gl::DeleteShader(fragment_shader);
-	gl::DeleteShader(vertex_shader);
+	unsafe {
+	    gl::ClearDepth(1.0);
+	    gl::DepthFunc(gl::LESS);
 
-	gl::GenVertexArrays(2, &mut vao[0]);
+	    gl::GenVertexArrays(2, &mut vao[0]);
 
-	// 座標軸をかく
-	ctxs.push(create_coordinate_axes_array(vao[0]));
+	    // 座標軸をかく
+	    ctxs.push(create_coordinate_axes_array(vao[0]));
 
-	// 球を書いてみる
-	ctxs.push(create_sphere_array_object(vao[1]));
+	}
 
+	unsafe {
+	    // 球を書いてみる
+	    ctxs.push(create_sphere_array_object(vao[1]));
+	}
     }
 
     GlRender {
-	shader_program: shader_program,
+	shader_programs: shader_programs,
 	vertex_array_object_contexts: ctxs
     }
 }
@@ -411,12 +406,12 @@ impl GlRender {
 	unsafe {
 	    let mvp_str = CString::new("mvp").unwrap_or_else(|_| panic!("failed to allocate string space"));
 	    let mvp_str_ptr = mvp_str.as_ptr();
-	    let mvp_location = gl::GetUniformLocation(self.shader_program, mvp_str_ptr);
+	    let mvp_location = gl::GetUniformLocation(self.shader_programs[0], mvp_str_ptr);
 	    gl::ClearColor(0.3, 0.3, 0.3, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT);
+            gl::Clear(gl::COLOR_BUFFER_BIT|gl::DEPTH_BUFFER_BIT);
 	    gl::Viewport(0, 0, width, height);
-	    gl::UseProgram(self.shader_program);
-	    gl::ProgramUniformMatrix4fv(self.shader_program, mvp_location, 1, gl::TRUE, mem::transmute(&mvp.serialize_f32()[0]));
+	    gl::UseProgram(self.shader_programs[0]);
+	    gl::ProgramUniformMatrix4fv(self.shader_programs[0], mvp_location, 1, gl::TRUE, mem::transmute(&mvp.serialize_f32()[0]));
 
 	    gl::BindVertexArray(self.vertex_array_object_contexts[0].vao);
 	    gl::DrawElements(self.vertex_array_object_contexts[0].draw_mode,
@@ -424,12 +419,16 @@ impl GlRender {
 			     gl::UNSIGNED_INT, ptr::null());
 	    gl::BindVertexArray(0);
 
+
+	    gl::Enable(gl::DEPTH_TEST);
+	    gl::UseProgram(self.shader_programs[1]);
+	    gl::ProgramUniformMatrix4fv(self.shader_programs[1], mvp_location, 1, gl::TRUE, mem::transmute(&mvp.serialize_f32()[0]));
 	    gl::BindVertexArray(self.vertex_array_object_contexts[1].vao);
 	    gl::DrawElements(self.vertex_array_object_contexts[1].draw_mode,
 			     self.vertex_array_object_contexts[1].count_of_draw_index,
 			     gl::UNSIGNED_INT, ptr::null());
 	    gl::BindVertexArray(0);
-
+	    gl::Disable(gl::DEPTH_TEST);
 	    gl::Flush();
 	}
     }
