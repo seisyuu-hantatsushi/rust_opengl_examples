@@ -3,6 +3,37 @@ use linear_transform::{vector::*,matrix::{Matrix4x4}};
 use std::{f64};
 use std::{f64::consts::PI};
 
+/* 平行移動行列 */
+pub fn translate(position:Vector3) -> Matrix4x4 {
+    Matrix4x4 {
+	v:
+	[
+	    [ 1.0 , 0.0, 0.0, position.0 ],
+	    [ 0.0 , 1.0, 0.0, position.1 ],
+	    [ 0.0 , 0.0, 1.0, position.2 ],
+	    [ 0.0 , 0.0, 0.0,        1.0 ],
+	]
+    }
+}
+
+
+/* 拡大縮小行列 */
+pub fn scale(scale:Vector3) -> Matrix4x4 {
+    Matrix4x4 {
+	v:
+	[
+	    [ scale.0,     0.0,     0.0,  0.0 ],
+	    [     0.0, scale.1,     0.0,  0.0 ],
+	    [     0.0,     0.0, scale.2,  0.0 ],
+	    [     0.0,     0.0,     0.0,  1.0 ]
+	]
+    }
+}
+
+/* 任意軸での回転行列 */
+/* ロドリゲスの回転公式から */
+
+
 /* 視野変換行列 */
 pub fn look_at(eye:Vector3, center:Vector3, up:Vector3) -> Matrix4x4 {
     /*
