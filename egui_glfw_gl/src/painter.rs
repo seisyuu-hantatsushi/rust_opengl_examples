@@ -108,8 +108,6 @@ pub struct Painter {
     pos_buffer: GLuint,
     tc_buffer: GLuint,
     color_buffer: GLuint,
-    canvas_width: u32,
-    canvas_height: u32,
     egui_texture: GLuint,
     egui_texture_version: Option<u64>,
     vert_shader: GLuint,
@@ -184,9 +182,7 @@ pub fn link_program(vs: GLuint, fs: GLuint) -> GLuint {
 
 impl Painter {
     pub fn new(
-        window: &mut glfw::Window,
-        canvas_width: u32,
-        canvas_height: u32,
+        window: &mut glfw::Window
     ) -> Painter {
         unsafe {
             let mut egui_texture = 0;
@@ -217,8 +213,6 @@ impl Painter {
             Painter {
                 vertex_array,
                 program,
-                canvas_width,
-                canvas_height,
                 index_buffer,
                 pos_buffer,
                 tc_buffer,
@@ -399,6 +393,8 @@ impl Painter {
         bg_color: Option<Color32>,
         meshes: Vec<ClippedMesh>,
         egui_texture: &Texture,
+	canvas_width: i32,
+	canvas_height: i32,
         pixels_per_point: f32,
     ) {
         self.upload_egui_texture(egui_texture);
@@ -429,7 +425,7 @@ impl Painter {
             let u_screen_size = CString::new("u_screen_size").unwrap();
             let u_screen_size_ptr = u_screen_size.as_ptr();
             let u_screen_size_loc = gl::GetUniformLocation(self.program, u_screen_size_ptr);
-            let screen_size_pixels = vec2(self.canvas_width as f32, self.canvas_height as f32);
+            let screen_size_pixels = vec2(canvas_width as f32, canvas_height as f32);
             let screen_size_points = screen_size_pixels / pixels_per_point;
             gl::Uniform2f(
                 u_screen_size_loc,
@@ -440,7 +436,7 @@ impl Painter {
             let u_sampler_ptr = u_sampler.as_ptr();
             let u_sampler_loc = gl::GetUniformLocation(self.program, u_sampler_ptr);
             gl::Uniform1i(u_sampler_loc, 0);
-            gl::Viewport(0, 0, self.canvas_width as i32, self.canvas_height as i32);
+            gl::Viewport(0, 0, canvas_width as i32, canvas_height as i32);
 
             for ClippedMesh(clip_rect, mesh) in meshes {
                 gl::BindTexture(gl::TEXTURE_2D, self.get_texture(mesh.texture_id));
@@ -461,7 +457,7 @@ impl Painter {
                 //scissor Y coordinate is from the bottom
                 gl::Scissor(
                     clip_min_x,
-                    self.canvas_height as i32 - clip_max_y,
+                    canvas_height as i32 - clip_max_y,
                     clip_max_x - clip_min_x,
                     clip_max_y - clip_min_y,
                 );
