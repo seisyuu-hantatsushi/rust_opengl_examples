@@ -1,0 +1,23 @@
+[package]
+name = "egui_sphere"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gl = "0.14.0"
+glfw = "0.41"
+egui = "0.13.1"
+egui_glfw_gl = { path = "../egui_glfw_gl" }
+linear_transform = { path = "../linear_transform" }
+graphic_math     = { path = "../graphic_math" }
+
+[dependencies.clipboard]
+package = "cli-clipboard"
+version = "0.2"
+optional = true
+
+[features]
+default = ["clipboard"]
+
