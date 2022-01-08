@@ -1,6 +1,7 @@
 
 mod draw_sphere;
 
+use std::{f64::consts::PI};
 use std::time;
 
 use glfw::{Context};
@@ -8,6 +9,11 @@ use egui_glfw_gl::egui::{vec2, Color32, Image, Pos2, Rect};
 
 use draw_sphere::DrawSphere;
 
+macro_rules! real_fixed {
+    ($x:expr,$decimal:expr) => (($x * 10f64.powf($decimal as f64)).round()/(10f64.powf($decimal as f64)))
+}
+
+#[derive(Clone,Copy,Debug)]
 struct CameraParamInput {
     position: (f64, f64, f64),
     center: (f64, f64, f64),
@@ -47,29 +53,44 @@ fn main() {
     let start_time = time::Instant::now();
     //let mut value_str: String = "0.0".to_owned();
 
-    let mut control_context = AppControlContext {
-	camera_parameter: CameraParamInput {
-	    position: (0.0, 0.0, 0.0),
-	    center: (0.0, 0.0, 0.0),
-	    up: (0.0, 0.0, 0.0)
-	}
+    let r:f64 = 4.0;
+    let theta:f64 = PI*60.0/180.0;
+    let phi:f64 = PI*45.0/180.0;
+    let init_camera_param : CameraParamInput = CameraParamInput {
+	position: (r*theta.sin()*phi.cos(), r*theta.sin()*phi.sin(), r*theta.cos()),
+	center: (0.0, 0.0, 0.0),
+	up: (0.0, 0.0, 1.0),
     };
 
-    let mut camera_position = (control_context.camera_parameter.position.0.to_string().to_owned(),
-			       control_context.camera_parameter.position.1.to_string().to_owned(),
-			       control_context.camera_parameter.position.2.to_string().to_owned());
-    let mut camera_center   = (control_context.camera_parameter.center.0.to_string().to_owned(),
-			       control_context.camera_parameter.center.1.to_string().to_owned(),
-			       control_context.camera_parameter.center.2.to_string().to_owned());
-    let mut camera_up       = (control_context.camera_parameter.up.0.to_string().to_owned(),
-			       control_context.camera_parameter.up.1.to_string().to_owned(),
-			       control_context.camera_parameter.up.2.to_string().to_owned());
+    let mut control_context = AppControlContext {
+	camera_parameter: init_camera_param
+    };
+
+    let camera_position_fixed = (real_fixed!(control_context.camera_parameter.position.0, 3),
+				 real_fixed!(control_context.camera_parameter.position.1, 3),
+				 real_fixed!(control_context.camera_parameter.position.2, 3));
+    let camera_center_fixed = (real_fixed!(control_context.camera_parameter.center.0, 3),
+				 real_fixed!(control_context.camera_parameter.center.1, 3),
+			       real_fixed!(control_context.camera_parameter.center.2, 3));
+    let camera_up_fixed = (real_fixed!(control_context.camera_parameter.up.0, 3),
+			       real_fixed!(control_context.camera_parameter.up.1, 3),
+			       real_fixed!(control_context.camera_parameter.up.2, 3));
+    let mut camera_position = (camera_position_fixed.0.to_string().to_owned(),
+			       camera_position_fixed.1.to_string().to_owned(),
+			       camera_position_fixed.2.to_string().to_owned());
+    let mut camera_center   = (camera_center_fixed.0.to_string().to_owned(),
+			       camera_center_fixed.1.to_string().to_owned(),
+			       camera_center_fixed.2.to_string().to_owned());
+    let mut camera_up       = (camera_up_fixed.0.to_string().to_owned(),
+			       camera_up_fixed.1.to_string().to_owned(),
+			       camera_up_fixed.2.to_string().to_owned());
 
     let draw_sphere = DrawSphere::create();
 
+    println!("{:?}",camera_position);
     while !window.should_close() {
 	let mut camera_update = false;
-
+	let mut camera_reset = false;
 	let (width,height) = window.get_size();
 	let native_pixels_per_point = window.get_content_scale().0;
 
@@ -83,47 +104,55 @@ fn main() {
 	egui_input_state.input.pixels_per_point = Some(native_pixels_per_point);
 
 	egui::Window::new("Control").show(&egui_ctx, |ui| {
-	    ui.set_max_width(100.0);
+	    ui.set_max_width(280.0);
 	    ui.group(|ui| {
 		ui.label("camera");
 		ui.horizontal(|ui| {
-		    ui.set_max_width(20.0);
+		    ui.set_max_width(250.0);
 		    ui.label("position");
 		    ui.label("x:");
-		    ui.text_edit_singleline(&mut camera_position.0);
+		    ui.add(egui::TextEdit::singleline(&mut camera_position.0).desired_width(30.0));
 		    ui.label("y:");
-		    ui.text_edit_singleline(&mut camera_position.1);
+		    ui.add(egui::TextEdit::singleline(&mut camera_position.1).desired_width(30.0));
 		    ui.label("z:");
-		    ui.text_edit_singleline(&mut camera_position.2);
+		    ui.add(egui::TextEdit::singleline(&mut camera_position.2).desired_width(30.0));
 		});
 		ui.horizontal(|ui| {
-		    ui.set_max_width(20.0);
+		    ui.set_max_width(250.0);
 		    ui.label("center");
 		    ui.label("x:");
-		    ui.text_edit_singleline(&mut camera_center.0);
+		    ui.add(egui::TextEdit::singleline(&mut camera_center.0).desired_width(30.0));
 		    ui.label("y:");
-		    ui.text_edit_singleline(&mut camera_center.1);
+		    ui.add(egui::TextEdit::singleline(&mut camera_center.1).desired_width(30.0));
 		    ui.label("z:");
-		    ui.text_edit_singleline(&mut camera_center.2);
+		    ui.add(egui::TextEdit::singleline(&mut camera_center.2).desired_width(30.0));
 		});
 		ui.horizontal(|ui| {
-		    ui.set_max_width(20.0);
+		    ui.set_max_width(250.0);
 		    ui.label("up");
 		    ui.label("x:");
-		    ui.text_edit_singleline(&mut camera_up.0);
+		    ui.add(egui::TextEdit::singleline(&mut camera_up.0).desired_width(30.0));
 		    ui.label("y:");
-		    ui.text_edit_singleline(&mut camera_up.1);
+		    ui.add(egui::TextEdit::singleline(&mut camera_up.1).desired_width(30.0));
 		    ui.label("z:");
-		    ui.text_edit_singleline(&mut camera_up.2);
+		    ui.add(egui::TextEdit::singleline(&mut camera_up.2).desired_width(30.0));
 		});
-		if ui.button("update").clicked() {
-		    camera_update = true;
-		}
+		ui.horizontal(|ui| {
+		    if ui.button("update").clicked() {
+			camera_update = true;
+		    }
+		    if ui.button("reset").clicked() {
+			camera_reset = true;
+		    }
+		});
 	    });
 	});
-	let (egui_output, paint_cmds) = egui_ctx.end_frame();
 
-	if camera_update {
+	let (egui_output, paint_cmds) = egui_ctx.end_frame();
+	if camera_reset {
+	    control_context.camera_parameter = init_camera_param;
+	}
+	else if camera_update {
 	    let position = (camera_position.0.parse::<f64>(),
 			    camera_position.1.parse::<f64>(),
 			    camera_position.2.parse::<f64>());
@@ -146,7 +175,10 @@ fn main() {
 	    }
 	}
 
-	draw_sphere.render(width,height);
+	draw_sphere.render(width,height,
+			   (control_context.camera_parameter.position,
+			    control_context.camera_parameter.center,
+			    control_context.camera_parameter.up));
 
 	//Handle cut, copy text from egui
         if !egui_output.copied_text.is_empty() {

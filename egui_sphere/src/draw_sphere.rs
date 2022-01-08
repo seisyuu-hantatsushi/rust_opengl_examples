@@ -409,14 +409,17 @@ impl DrawSphere {
 	}
     }
 
-    pub fn render(&self, width:i32, height:i32) -> () {
+    pub fn render(&self, width:i32, height:i32, camera_param:((f64,f64,f64),(f64,f64,f64),(f64,f64,f64))) -> () {
 	//射影変換行列を計算する.
 	let r:f64      = 4.0;
 	let theta:f64  = PI*60.0/180.0;
 	let phi:f64    = PI*45.0/180.0;
-	let eye    = Vector3(r*theta.sin()*phi.cos(), r*theta.sin()*phi.sin(), r*theta.cos());
-	let center = Vector3(0.0,0.0,0.0);
-	let up     = Vector3(0.0,0.0,1.0);
+	//let eye    = Vector3(r*theta.sin()*phi.cos(), r*theta.sin()*phi.sin(), r*theta.cos());
+	//let center = Vector3(0.0,0.0,0.0);
+	//let up     = Vector3(0.0,0.0,1.0);
+	let eye    = Vector3::make_from_tuple(camera_param.0);
+	let center = Vector3::make_from_tuple(camera_param.1);
+	let up     = Vector3::make_from_tuple(camera_param.2);
 	let lookat = graphic_math::look_at(eye,center,up);
 	let aspect = (width as f64)/ (height as f64);
 	let pers   = graphic_math::perspective(30.0, aspect, 1.0, 11.0);
