@@ -115,6 +115,11 @@ impl ops::Neg for Vector3 {
 
 impl Vector3 {
     #[allow(dead_code)]
+    pub fn make_from_tuple(v:(f64,f64,f64)) -> Self {
+	Self(v.0, v.1, v.2)
+    }
+
+    #[allow(dead_code)]
     pub fn square(self) -> f64 {
 	self * self
     }
