@@ -32,7 +32,19 @@ pub fn scale(scale:Vector3) -> Matrix4x4 {
 
 /* 任意軸での回転行列 */
 /* ロドリゲスの回転公式から */
-
+pub fn rotate(axis:Vector3, angle_in_degree:f64) -> Matrix4x4 {
+    let theta = 2.0*PI*angle_in_degree/360.0;
+    let n = axis.normalize();
+    Matrix4x4 {
+	v:
+	[
+	    [ n.0*n.0*(1.0-theta.cos())+1.0*theta.cos(), n.0*n.1*(1.0-theta.cos())-n.2*theta.sin(), n.0*n.2*(1.0-theta.cos())+n.1*theta.sin(), 0.0 ],
+	    [ n.0*n.1*(1.0-theta.cos())+n.2*theta.sin(), n.1*n.1*(1.0-theta.cos())+1.0*theta.cos(), n.1*n.2*(1.0-theta.cos())-n.0*theta.sin(), 0.0 ],
+	    [ n.0*n.2*(1.0-theta.cos())-n.1*theta.sin(), n.1*n.2*(1.0-theta.cos())+n.0*theta.sin(), n.2*n.2*(1.0-theta.cos())+1.0*theta.cos(), 0.0 ],
+	    [                                       0.0,                                       0.0,                                       0.0, 1.0 ],
+	]
+    }
+}
 
 /* 視野変換行列 */
 pub fn look_at(eye:Vector3, center:Vector3, up:Vector3) -> Matrix4x4 {
@@ -47,7 +59,7 @@ pub fn look_at(eye:Vector3, center:Vector3, up:Vector3) -> Matrix4x4 {
      */
     let z = (eye-center).normalize();
     let x = Vector3::cross_product(up,z)/Vector3::cross_product(up,z).length();
-    let y =  Vector3::cross_product(z,x);
+    let y = Vector3::cross_product(z,x);
     Matrix4x4 {
 	v :
 	[
