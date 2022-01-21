@@ -427,8 +427,8 @@ impl DrawSphere {
 	let pers   = graphic_math::perspective(30.0, aspect, 1.0, 11.0);
 	let mvp    = pers*lookat;
 	let degree = (((self.elapsed_time.as_millis())%(20000)) as f64)*(360.0/20000.0);
-	self.elapsed_time += interval;
 
+	self.elapsed_time += interval;
 	unsafe {
 
 	    gl::ClearColor(0.3, 0.3, 0.3, 1.0);
