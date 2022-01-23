@@ -1,4 +1,4 @@
-use linear_transform::{vector::*,matrix::{Matrix4x4}};
+use linear_transform::{vector::*,matrix::*};
 
 use std::{f64};
 use std::{f64::consts::PI};
@@ -131,4 +131,19 @@ pub fn perspective(fovy:f64, aspect:f64, near:f64, far:f64) -> Matrix4x4 {
 	    [            0.0,         0.0,                        -1.0,                       0.0 ]
 	]
     }
+}
+
+pub fn normal_matrix(view:Matrix4x4) -> Matrix3x3 {
+    Matrix3x3 {
+	v:
+	[
+	    [ view[0][0], view[1][0], view[2][0] ],
+	    [ view[0][1], view[1][1], view[2][1] ],
+	    [ view[0][2], view[1][2], view[2][2] ]
+	]
+    }
+}
+
+pub fn vector3_to_vector4_pos(v:Vector3) -> Vector4 {
+    Vector4(v.0, v.1, v.2, 1.0)
 }

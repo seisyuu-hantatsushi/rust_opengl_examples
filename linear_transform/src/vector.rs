@@ -142,11 +142,39 @@ impl Vector3 {
 	let z = lhs.0 * other.1 - lhs.1 * other.0;
 	Self(x, y, z)
     }
+
+    /* シリアライズ */
+    pub fn serialize(self) -> [f64; 3] {
+	[self.0, self.1, self.2]
+    }
+
+    pub fn serialize_f32(self) -> [f32; 3] {
+	[self.0 as f32, self.1 as f32, self.2 as f32]
+    }
 }
 
 impl ops::BitAnd for Vector3 {
     type Output = Vector3;
     fn bitand(self, rhs: Self) -> Self::Output {
 	Vector3::cross_product(self, rhs)
+    }
+}
+
+#[derive(Debug,Copy,Clone,PartialEq)]
+pub struct Vector4 (pub f64, pub f64, pub f64, pub f64);
+
+impl Vector4 {
+    #[allow(dead_code)]
+    pub fn make_from_tuple(v:(f64,f64,f64,f64)) -> Self {
+	Self(v.0, v.1, v.2, v.3)
+    }
+
+    /* シリアライズ */
+    pub fn serialize(self) -> [f64; 4] {
+	[self.0, self.1, self.2, self.3]
+    }
+
+    pub fn serialize_f32(self) -> [f32; 4] {
+	[self.0 as f32, self.1 as f32, self.2 as f32, self.3 as f32]
     }
 }

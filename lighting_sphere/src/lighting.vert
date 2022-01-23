@@ -17,20 +17,18 @@ uniform vec3 Ld; // strength of Light;
 out vec4 lightIntensity;
 
 smooth out vec4 fragmentColor;
-//const vec3 lightDir = normalize(vec3(8.0, 4.0, 2.0));
-//const vec3 lightColor = vec3(1.0,1.0,1.0);
 
 void main(void){
     mat4 modelview = view*model;
     vec3 Kd = vec3(vertexColor.x, vertexColor.y, vertexColor.z);
     vec3 tnorm = normalize(normalMatrix * normal);
     vec4 eyeCoords = view*model*vec4(position, 1.0);
-    vec3 s = normalize(vec3(lightPosition - eyeCoords));
+    vec3 s = normalize(vec3(lightPosition-eyeCoords));
 
     mat4 mvp = projection*modelview;
 
     //calc reflection
-    lightIntensity = vec4(Ld*Kd*max(dot(s,tnorm),0.0),vertexColor.w);
+    lightIntensity = vec4(Ld*Kd*max(dot(-s,tnorm),0.0),vertexColor.w);
 
     gl_Position = mvp*vec4(position, 1.0);
 
